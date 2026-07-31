@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { ForceGraphMethods } from "react-force-graph-3d";
 import type { KnowledgeGraph, KnowledgeNode } from "@/lib/graph-data";
 
@@ -21,6 +21,7 @@ export function KnowledgeGraphView({
   onSelectNode,
 }: KnowledgeGraphViewProps) {
   const graphRef = useRef<ForceGraphMethods | undefined>(undefined);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   const graph = useMemo(
     () => ({
@@ -38,21 +39,20 @@ export function KnowledgeGraphView({
         z?: number;
       };
 
-      const distance = 135;
-      const length = Math.hypot(node.x ?? 0, node.y ?? 0, node.z ?? 0) || 1;
+      onSelectNode(node);
+
+      const x = node.x ?? 0;
+      const y = node.y ?? 0;
+      const z = node.z ?? 0;
+      const distance = 115;
+      const length = Math.hypot(x, y, z) || 1;
       const ratio = 1 + distance / length;
 
       graphRef.current?.cameraPosition(
-        {
-          x: (node.x ?? 0) * ratio,
-          y: (node.y ?? 0) * ratio,
-          z: (node.z ?? 0) * ratio,
-        },
-        { x: node.x ?? 0, y: node.y ?? 0, z: node.z ?? 0 },
-        850,
+        { x: x * ratio, y: y * ratio, z: z * ratio },
+        { x, y, z },
+        700,
       );
-
-      onSelectNode(node);
     },
     [onSelectNode],
   );
@@ -70,9 +70,13 @@ export function KnowledgeGraphView({
         nodeColor={(node) => (node as KnowledgeNode).color}
         nodeVal={(node) => {
           const item = node as KnowledgeNode;
-          return item.val * (item.id === selectedNodeId ? 1.55 : 1);
+          const selectedBoost = item.id === selectedNodeId ? 1.75 : 1;
+          const hoverBoost = item.id === hoveredNodeId ? 1.35 : 1;
+          return item.val * selectedBoost * hoverBoost;
         }}
-        nodeOpacity={0.93}
+        nodeRelSize={5.5}
+        nodeResolution={24}
+        nodeOpacity={0.96}
         linkColor={() => "rgba(85, 242, 192, 0.38)"}
         linkOpacity={0.72}
         linkWidth={1.1}
@@ -85,10 +89,15 @@ export function KnowledgeGraphView({
         cooldownTicks={120}
         d3AlphaDecay={0.025}
         d3VelocityDecay={0.28}
-        onNodeClick={focusNode}
+        onNodeHover={(node) => {
+          const item = node as KnowledgeNode | null;
+          setHoveredNodeId(item?.id ?? null);
+          document.body.style.cursor = item ? "pointer" : "default";
+        }}
+        onNodeClick={(node) => focusNode(node as object)}
         onEngineStop={() => graphRef.current?.zoomToFit(700, 90)}
       />
-      <div className="graph-help">Перетаскивай · вращай · нажимай на узлы</div>
+      <div className="graph-help">Наведи на узел и нажми — карточка откроется справа от графа</div>
     </div>
   );
 }
