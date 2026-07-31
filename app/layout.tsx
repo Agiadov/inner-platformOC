@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SupabaseAutoSync } from "@/components/supabase-auto-sync";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru">
-      <body>{children}</body>
+      <body>
+        <SupabaseAutoSync />
+        {children}
+      </body>
     </html>
   );
 }
