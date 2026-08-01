@@ -152,20 +152,36 @@ export class KernelQueue {
         this.events.emit({ type: "task.started", taskId: task.id, projectId: task.projectId, payload: task });
 
         try {
-          task.output = await executor(task, this.context);
-          if (task.status === "cancelled") continue;
-          task.status = "completed";
-          task.completedAt = new Date().toISOString();
-          this.events.emit({ type: "task.completed", taskId: task.id, projectId: task.projectId, payload: task });
+          const output = await executor(task, this.context);
+          const currentTask = this.tasks.get(task.id);
+          if (!currentTask || currentTask.status === "cancelled") continue;
+
+          currentTask.output = output;
+          currentTask.status = "completed";
+          currentTask.completedAt = new Date().toISOString();
+          this.events.emit({
+            type: "task.completed",
+            taskId: currentTask.id,
+            projectId: currentTask.projectId,
+            payload: currentTask,
+          });
         } catch (error) {
-          task.error = error instanceof Error ? error.message : String(error);
-          if ((task.attempts ?? 0) < (task.maxAttempts ?? 1)) {
-            task.status = "queued";
+          const currentTask = this.tasks.get(task.id) ?? task;
+          if (currentTask.status === "cancelled") continue;
+
+          currentTask.error = error instanceof Error ? error.message : String(error);
+          if ((currentTask.attempts ?? 0) < (currentTask.maxAttempts ?? 1)) {
+            currentTask.status = "queued";
             continue;
           }
-          task.status = "failed";
-          task.completedAt = new Date().toISOString();
-          this.events.emit({ type: "task.failed", taskId: task.id, projectId: task.projectId, payload: task });
+          currentTask.status = "failed";
+          currentTask.completedAt = new Date().toISOString();
+          this.events.emit({
+            type: "task.failed",
+            taskId: currentTask.id,
+            projectId: currentTask.projectId,
+            payload: currentTask,
+          });
         }
       }
     } finally {
