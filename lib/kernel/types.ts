@@ -25,6 +25,10 @@ export type KernelEventType =
   | "task.cancelled"
   | "memory.written"
   | "memory.deleted"
+  | "tool.registered"
+  | "tool.started"
+  | "tool.completed"
+  | "tool.failed"
   | "run.started"
   | "run.completed";
 
@@ -37,7 +41,7 @@ export type KernelEvent<TPayload = unknown> = {
   payload: TPayload;
 };
 
-export type KernelMemoryKind = "project" | "note" | "run" | "artifact" | "agent" | "skill" | "system";
+export type KernelMemoryKind = "project" | "note" | "run" | "artifact" | "agent" | "skill" | "tool" | "system";
 
 export type KernelMemory<TValue = unknown> = {
   id: string;
