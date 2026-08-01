@@ -65,6 +65,20 @@ export class KernelEventBus {
   clearListeners() {
     this.listeners.clear();
   }
+
+  private notify<TPayload>(type: KernelEventType | "*", event: KernelEvent<TPayload>) {
+    const listeners = this.listeners.get(type);
+    if (!listeners?.size) return;
+
+    listeners.forEach((listener) => {
+      try {
+        listener(event as KernelEvent);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`[LUTOWAY OS] Event listener failed for ${type}: ${message}`);
+      }
+    });
+  }
 }
 
 export const kernelEventBus = new KernelEventBus();
