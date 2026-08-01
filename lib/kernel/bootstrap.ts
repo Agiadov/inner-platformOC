@@ -1,6 +1,8 @@
 import { agentRuntime, type AgentDefinition } from "@/lib/kernel/agent-runtime";
+import { supabaseTool } from "@/lib/kernel/adapters/supabase-tool";
 import { kernelRunner } from "@/lib/kernel/runner-engine";
 import { kernelSkills, type SkillDefinition } from "@/lib/kernel/skill-engine";
+import { kernelTools } from "@/lib/kernel/tool-hub";
 
 let bootstrapped = false;
 
@@ -9,7 +11,7 @@ const skills: SkillDefinition[] = [
   { id: "ui-ux", name: "UI/UX", description: "Проектирует структуру и пользовательский путь.", category: "design", tags: ["ui", "ux", "layout"], capabilities: ["wireframe", "hierarchy", "accessibility"], version: "1.0.0", enabled: true },
   { id: "copywriting", name: "Copywriting", description: "Пишет оффер, заголовки и CTA.", category: "marketing", tags: ["copy", "offer", "cta"], capabilities: ["headline", "landing-copy"], version: "1.0.0", enabled: true },
   { id: "motion", name: "Motion Design", description: "Проектирует переходы и микроанимации.", category: "design", tags: ["motion", "animation"], capabilities: ["framer-motion", "transitions"], version: "1.0.0", enabled: true },
-  { id: "frontend", name: "Frontend", description: "Собирает адаптивные React/Next.js интерфейсы.", category: "development", tags: ["react", "next", "typescript"], capabilities: ["implementation", "responsive-ui"], version: "1.0.0", enabled: true },
+  { id: "frontend", name: "Frontend", description: "Собирает адаптивные React/Next.js интерфейсы.", category: "development", tags: ["react", "next", "typescript"], capabilities: ["implementation", "responsive-ui"], tools: ["supabase"], version: "1.0.0", enabled: true },
   { id: "qa", name: "Quality Assurance", description: "Проверяет сборку и пользовательские сценарии.", category: "development", tags: ["qa", "testing"], capabilities: ["regression", "mobile-check"], version: "1.0.0", enabled: true },
   { id: "content-strategy", name: "Content Strategy", description: "Строит рубрики и контент-план.", category: "social", tags: ["content", "reels", "shorts"], capabilities: ["content-plan", "formats"], version: "1.0.0", enabled: true },
 ];
@@ -44,13 +46,15 @@ const agents: AgentDefinition[] = [
   createAgent({ id: "reels", name: "Reels Agent", description: "Пишет сценарии коротких видео.", taskTypes: ["agent.copy"], defaultSkillIds: ["copywriting", "content-strategy"] }),
   createAgent({ id: "strategy", name: "Strategy Agent", description: "Строит контент-систему.", taskTypes: ["agent.strategy"], defaultSkillIds: ["content-strategy"] }),
   createAgent({ id: "motion", name: "Motion Agent", description: "Проектирует анимации.", taskTypes: ["agent.motion"], defaultSkillIds: ["motion"] }),
-  createAgent({ id: "frontend", name: "Frontend Agent", description: "Собирает интерфейс.", taskTypes: ["agent.frontend"], defaultSkillIds: ["frontend"] }),
+  createAgent({ id: "frontend", name: "Frontend Agent", description: "Собирает интерфейс.", taskTypes: ["agent.frontend"], defaultSkillIds: ["frontend"], allowedToolIds: ["supabase"] }),
   createAgent({ id: "qa", name: "QA Agent", description: "Проверяет результат.", taskTypes: ["agent.qa"], defaultSkillIds: ["qa"] }),
 ];
 
 export function bootstrapKernel() {
   if (bootstrapped) return;
   bootstrapped = true;
+
+  if (!kernelTools.get(supabaseTool.id)) kernelTools.register(supabaseTool);
 
   skills.forEach((skill) => {
     if (!kernelSkills.get(skill.id)) kernelSkills.register(skill);
